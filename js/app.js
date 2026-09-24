@@ -126,7 +126,7 @@ function openForm(spot) {
   $('sheet').showModal();
 }
 
-$('form-day').addEventListener('change', e => fillAfterOptions(e.target.value, 'first'));
+$('form-day').addEventListener('change', e => fillAfterOptions(e.target.value, null));
 
 async function fetchJson(url) {
   const res = await fetch(url, { headers: { 'Accept': 'application/json' } });

@@ -7,6 +7,10 @@ export function createStore({ config, tripId, seed, onChange, onStatus }) {
   let spots = [];
   let db = null;
   let fs = null;
+  let local = false; // 未設定 Firebase 時的本機模式：只存在這支手機
+
+  const newLocalId = () => 'u-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  function localMutate(fn) { fn(); saveCache(); emit(); }
 
   const emit = () => onChange(spots);
   const col = () => fs.collection(db, 'trips', tripId, 'spots');
@@ -18,7 +22,7 @@ export function createStore({ config, tripId, seed, onChange, onStatus }) {
   function saveCache() {
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(spots)); } catch { /* ignore */ }
   }
-  function ready() { if (!db) throw new Error('尚未連線到資料庫'); }
+  function ready() { if (!db && !local) throw new Error('尚未連線到資料庫'); }
 
   async function writeSeed(list) {
     const batch = fs.writeBatch(db);
@@ -45,7 +49,7 @@ export function createStore({ config, tripId, seed, onChange, onStatus }) {
     loadCache();
     if (!spots.length) spots = seedToSpots(seed);
     emit();
-    if (!config || !config.apiKey || !tripId) { onStatus('unconfigured'); return; }
+    if (!config || !config.apiKey || !tripId) { local = true; onStatus('local'); return; }
     onStatus('connecting');
     try {
       const { initializeApp } = await import(FB + 'firebase-app.js');
@@ -65,20 +69,28 @@ export function createStore({ config, tripId, seed, onChange, onStatus }) {
 
   async function addSpot(data) {
     ready();
+    if (local) { const id = newLocalId(); localMutate(() => spots.push({ ...data, id, source: 'user' })); return id; }
     const ref = fs.doc(col());
     fs.setDoc(ref, { ...data, id: ref.id, source: 'user', updatedAt: fs.serverTimestamp() }).catch(console.error);
     return ref.id;
   }
   async function updateSpot(id, data) {
     ready();
+    if (local) { localMutate(() => { spots = spots.map(s => s.id === id ? { ...s, ...data } : s); }); return; }
     fs.updateDoc(docRef(id), { ...data, updatedAt: fs.serverTimestamp() }).catch(console.error);
   }
   async function deleteSpot(id) {
     ready();
+    if (local) { localMutate(() => { spots = spots.filter(s => s.id !== id); }); return; }
     fs.deleteDoc(docRef(id)).catch(console.error);
   }
   async function reorder(pairs) {
     ready();
+    if (local) {
+      const m = new Map(pairs.map(p => [p.id, p.order]));
+      localMutate(() => { spots = spots.map(s => m.has(s.id) ? { ...s, order: m.get(s.id) } : s); });
+      return;
+    }
     const batch = fs.writeBatch(db);
     for (const p of pairs) batch.update(docRef(p.id), { order: p.order });
     batch.commit().catch(console.error);
@@ -86,8 +98,9 @@ export function createStore({ config, tripId, seed, onChange, onStatus }) {
   async function restoreSeed() {
     ready();
     const have = new Set(spots.map(s => s.id));
+    if (local) { localMutate(() => { spots = spots.concat(seedToSpots(seed).filter(s => !have.has(s.id))); }); return; }
     await writeSeed(seedToSpots(seed).filter(s => !have.has(s.id)));
   }
 
-  return { connect, isReady: () => !!db, addSpot, updateSpot, deleteSpot, reorder, restoreSeed, getSpots: () => spots };
+  return { connect, isReady: () => !!db || local, addSpot, updateSpot, deleteSpot, reorder, restoreSeed, getSpots: () => spots };
 }

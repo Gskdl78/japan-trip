@@ -1,13 +1,13 @@
-// 複製成 firebase-config.js 後填入 Firebase Console → 專案設定 → 你的應用程式 → SDK 設定 的值
+// Firebase 網頁設定（這些值本來就是公開的，可放在 repo）
 export const firebaseConfig = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: '',
+  apiKey: 'AIzaSyCZi6ZZvUSblstsaFnFZZsNT827FUisIi4',
+  authDomain: 'japan-8343e.firebaseapp.com',
+  projectId: 'japan-8343e',
+  storageBucket: 'japan-8343e.firebasestorage.app',
+  messagingSenderId: '5108954488',
+  appId: '1:5108954488:web:08868f12eb201e1edd048d',
 };
-// 任意一串隨機英數（建議 20 字元），所有同行者用同一個網址就會共用這份資料
-export const TRIP_ID = '';
-// 編輯用 PIN，例如 '2026'
-export const EDIT_PIN = '';
+// 所有同行者共用這份資料的識別碼
+export const TRIP_ID = 'wqlxhaddq06u5wdi0gqz';
+// 編輯用 PIN
+export const EDIT_PIN = '2026';

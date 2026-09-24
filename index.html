@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f5fbf">
+<title>日本快樂玩</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="header" class="header"></header>
+<nav id="tabs" class="tabs" aria-label="日期"></nav>
+<div id="status" class="status" hidden></div>
+<main id="day" class="day"></main>
+<section class="map-wrap">
+  <div class="map-title">當天地圖</div>
+  <div id="map" class="map"></div>
+</section>
+<button id="fab" class="fab" aria-label="新增景點">＋</button>
+
+<dialog id="sheet" class="sheet">
+  <form id="spot-form" method="dialog" class="form">
+    <h2 id="sheet-title">新增景點</h2>
+    <label>名稱 <input name="name" required autocomplete="off"></label>
+    <div class="row">
+      <button type="button" id="btn-search" class="btn small">搜尋座標</button>
+      <span id="coord-status" class="muted">尚未取得座標</span>
+    </div>
+    <ul id="search-results" class="results"></ul>
+    <label>或貼 Google Maps 連結
+      <input name="mapsUrl" inputmode="url" placeholder="https://www.google.com/maps/…">
+    </label>
+    <div class="row">
+      <button type="button" id="btn-parse" class="btn small">從連結取座標</button>
+      <span id="parse-status" class="muted"></span>
+    </div>
+    <input type="hidden" name="lat"><input type="hidden" name="lng">
+    <label>分類
+      <select name="category">
+        <option value="sight">景點</option><option value="food">餐廳</option>
+        <option value="shop">購物</option><option value="transit">交通</option><option value="hotel">住宿</option>
+      </select>
+    </label>
+    <label>時段（例：午餐、14:00）<input name="timeHint"></label>
+    <label>最近車站 / 出口<input name="station"></label>
+    <label>怎麼從上一站過來（例：步行 5 分、銀座線 淺草→上野）<input name="legFromPrev"></label>
+    <label>備註<textarea name="note" rows="2"></textarea></label>
+    <label>日期<select name="day" id="form-day"></select></label>
+    <label>放在哪一站之後<select name="after" id="form-after"></select></label>
+    <p id="form-error" class="error" hidden></p>
+    <div class="row end">
+      <button type="button" id="btn-cancel" class="btn ghost">取消</button>
+      <button type="submit" class="btn primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="menu" class="menu">
+  <div class="menu-title" id="menu-title"></div>
+  <button class="menu-item" data-act="edit">編輯</button>
+  <button class="menu-item danger" data-act="delete">刪除</button>
+  <button class="menu-item" data-act="restore">還原原始行程（補回被刪的原始景點）</button>
+  <button class="menu-item" data-act="close">關閉</button>
+</dialog>
+
+<dialog id="pin" class="pin-dialog">
+  <form method="dialog" class="form">
+    <h2>輸入編輯 PIN 碼</h2>
+    <p class="muted">只需在這支手機輸入一次。</p>
+    <input id="pin-input" inputmode="numeric" autocomplete="off" placeholder="PIN">
+    <p id="pin-error" class="error" hidden>PIN 不正確</p>
+    <div class="row end">
+      <button type="button" id="pin-cancel" class="btn ghost">取消</button>
+      <button type="submit" class="btn primary">確認</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

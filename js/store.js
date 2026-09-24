@@ -59,12 +59,14 @@ export function createStore({ config, tripId, seed, onChange, onStatus }) {
     } catch (e) {
       console.error(e); onStatus('error'); return;
     }
-    await ensureSeeded();
+    onStatus('connecting'); // db 已建立，可離線排隊寫入
     fs.onSnapshot(col(), { includeMetadataChanges: true }, snap => {
-      spots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      saveCache(); emit();
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // 第一次離線開啟時本機 Firestore 快取可能是空的，保留 localStorage 的內容
+      if (!(snap.metadata.fromCache && list.length === 0 && spots.length)) { spots = list; saveCache(); emit(); }
       onStatus(snap.metadata.fromCache ? 'offline' : 'online');
     }, err => { console.error(err); onStatus('error'); });
+    ensureSeeded(); // 背景執行；離線時會失敗，下次上線再試
   }
 
   async function addSpot(data) {

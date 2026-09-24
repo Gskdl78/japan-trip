@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1f5fbf">
+<meta name="robots" content="noindex, nofollow">
 <title>日本快樂玩</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="style.css">
@@ -23,6 +24,9 @@
   <form id="spot-form" method="dialog" class="form">
     <h2 id="sheet-title">新增景點</h2>
     <label>名稱 <input name="name" required autocomplete="off"></label>
+    <label>地址（從 Google Maps 複製貼上即可，可留空）
+      <input name="address" autocomplete="off" placeholder="例：東京都台東区上野4-9-8">
+    </label>
     <div class="row">
       <button type="button" id="btn-search" class="btn small">搜尋座標</button>
       <span id="coord-status" class="muted">尚未取得座標</span>

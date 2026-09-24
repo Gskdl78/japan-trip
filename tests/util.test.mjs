@@ -120,3 +120,22 @@ test('defaultDay', () => {
 test('seedToSpots 標記 source seed', () => {
   assert.deepEqual(seedToSpots({ spots: [{ id: 'a' }] }), [{ id: 'a', source: 'seed' }]);
 });
+
+import { normalizeAddress, gsiUrl, gsiToChoices } from '../js/util.js';
+
+test('normalizeAddress 去掉國名、郵遞區號並轉半形', () => {
+  assert.equal(normalizeAddress('日本、〒101-0021 東京都千代田区外神田４丁目３−２'), '東京都千代田区外神田4丁目3-2');
+  assert.equal(normalizeAddress('〒110-0005 東京都台東区上野４丁目９−８'), '東京都台東区上野4丁目9-8');
+  assert.equal(normalizeAddress('東京都渋谷区神宮前1丁目6-15 ジュネスビル 1F'), '東京都渋谷区神宮前1丁目6-15 ジュネスビル 1F');
+  assert.equal(normalizeAddress('東京タワー'), '東京タワー');
+});
+
+test('gsiUrl 帶入查詢字串', () => {
+  assert.equal(gsiUrl('東京都台東区上野4-9-8'), 'https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + encodeURIComponent('東京都台東区上野4-9-8'));
+});
+
+test('gsiToChoices 轉換 GeoJSON', () => {
+  const raw = [{ geometry: { coordinates: [139.773987, 35.710426] }, properties: { title: '東京都台東区上野四丁目９番８号' } }];
+  assert.deepEqual(gsiToChoices(raw), [{ name: '東京都台東区上野四丁目９番８号', lat: 35.710426, lng: 139.773987, address: '東京都台東区上野四丁目９番８号', kind: 'address' }]);
+  assert.deepEqual(gsiToChoices(null), []);
+});

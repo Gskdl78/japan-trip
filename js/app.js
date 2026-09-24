@@ -1,4 +1,4 @@
-import { spotsForDay, defaultDay, computeOrder, parseMapsUrl, isShortMapsUrl, nominatimUrl, nominatimToChoices } from './util.js';
+import { spotsForDay, defaultDay, computeOrder, parseMapsUrl, isShortMapsUrl, nominatimUrl, nominatimToChoices, normalizeAddress, gsiUrl, gsiToChoices } from './util.js';
 import { renderHeader, renderTabs, renderDay, esc } from './render.js';
 import { createMap } from './map.js';
 import { createStore } from './store.js';
@@ -117,7 +117,7 @@ function openForm(spot) {
     const list = spotsForDay(state.spots, day);
     const idx = list.findIndex(s => s.id === spot.id);
     after = idx > 0 ? list[idx - 1].id : 'first';
-    f.name.value = spot.name; f.mapsUrl.value = spot.mapsUrl || ''; f.category.value = spot.category;
+    f.name.value = spot.name; f.address.value = spot.address || ''; f.mapsUrl.value = spot.mapsUrl || ''; f.category.value = spot.category;
     f.timeHint.value = spot.timeHint || ''; f.station.value = spot.station || '';
     f.legFromPrev.value = spot.legFromPrev || ''; f.note.value = spot.note || '';
   }
@@ -128,16 +128,42 @@ function openForm(spot) {
 
 $('form-day').addEventListener('change', e => fillAfterOptions(e.target.value, 'first'));
 
+async function fetchJson(url) {
+  const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+// 地址 → 國土地理院（精準）；名稱 → OpenStreetMap Nominatim。兩者同時查，地址結果排前面。
+async function geocode(name, address) {
+  const tasks = [];
+  if (address) {
+    const a = normalizeAddress(address);
+    tasks.push(fetchJson(gsiUrl(a)).then(gsiToChoices).catch(() => []));
+    tasks.push(fetchJson(nominatimUrl(a)).then(nominatimToChoices).catch(() => []));
+  }
+  if (name) tasks.push(fetchJson(nominatimUrl(name)).then(nominatimToChoices).catch(() => []));
+  const lists = await Promise.all(tasks);
+  const seen = new Set();
+  return lists.flat().filter(c => {
+    const k = c.lat.toFixed(4) + ',' + c.lng.toFixed(4);
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  }).slice(0, 6);
+}
+
 $('btn-search').addEventListener('click', async () => {
-  const q = $('spot-form').name.value.trim();
+  const f = $('spot-form');
+  const name = f.name.value.trim();
+  const address = f.address.value.trim();
   const ul = $('search-results');
-  if (!q) { ul.innerHTML = '<li>請先輸入名稱</li>'; return; }
+  if (!name && !address) { ul.innerHTML = '<li>請先輸入名稱或地址</li>'; return; }
   ul.innerHTML = '<li>搜尋中…</li>';
   try {
-    const res = await fetch(nominatimUrl(q), { headers: { 'Accept': 'application/json' } });
-    const choices = nominatimToChoices(await res.json());
-    if (!choices.length) { ul.innerHTML = '<li>找不到，請改貼 Google Maps 連結</li>'; return; }
-    ul.innerHTML = choices.map((c, i) => `<li data-i="${i}">${esc(c.name)}<span class="addr">${esc(c.address)}</span></li>`).join('');
+    const choices = await geocode(name, address);
+    if (!choices.length) { ul.innerHTML = '<li>找不到。請試著只貼「東京都○○区○○1-2-3」這段地址，或改貼 Google Maps 連結</li>'; return; }
+    ul.innerHTML = choices.map((c, i) => `<li data-i="${i}">${c.kind === 'address' ? '📍 地址比對：' : ''}${esc(c.name)}<span class="addr">${esc(c.address)}</span></li>`).join('');
+    if (choices[0].kind === 'address') { ul.firstElementChild.classList.add('selected'); setCoords({ lat: choices[0].lat, lng: choices[0].lng }); }
     ul.querySelectorAll('li').forEach(li => li.addEventListener('click', () => {
       ul.querySelectorAll('li').forEach(x => x.classList.remove('selected'));
       li.classList.add('selected');
@@ -176,7 +202,7 @@ $('spot-form').addEventListener('submit', e => {
   const { order, reorder } = computeOrder(list, f.after.value);
   const data = {
     day, order, lat: c.lat, lng: c.lng,
-    name: f.name.value.trim(), category: f.category.value,
+    name: f.name.value.trim(), address: f.address.value.trim(), category: f.category.value,
     timeHint: f.timeHint.value.trim(), station: f.station.value.trim(),
     legFromPrev: f.legFromPrev.value.trim(), note: f.note.value.trim(),
     mapsUrl: /^https?:\/\//.test(rawUrl) ? rawUrl : '',

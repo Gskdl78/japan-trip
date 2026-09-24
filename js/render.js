@@ -37,6 +37,7 @@ function cardHtml(spot, index, prevPoint) {
         </div>
         <h3>${esc(spot.name)}</h3>
         ${spot.station ? `<div class="station">🚉 ${esc(spot.station)}</div>` : ''}
+        ${spot.address ? `<div class="station">📍 ${esc(spot.address)}</div>` : ''}
         ${spot.note ? `<p class="note">${esc(spot.note)}</p>` : ''}
         <div class="actions">
           <a class="btn" href="${esc(placeUrl(spot))}" target="_blank" rel="noopener">開地圖</a>

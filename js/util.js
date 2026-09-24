@@ -99,3 +99,27 @@ export function defaultDay(days, today) {
 export function seedToSpots(seed) {
   return seed.spots.map(s => ({ ...s, source: 'seed' }));
 }
+
+export function normalizeAddress(s) {
+  let t = String(s || '');
+  t = t.replace(/[０-９Ａ-Ｚａ-ｚ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+  t = t.replace(/[−－‐‑–—]/g, '-');
+  t = t.replace(/(\d)ー(\d)/g, '$1-$2');
+  t = t.replace(/^日本[、,\s]*/, '');
+  t = t.replace(/〒?\s*\d{3}-?\d{4}\s*/g, '');
+  return t.replace(/\s+/g, ' ').trim();
+}
+
+export function gsiUrl(q) {
+  return 'https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + encodeURIComponent(q);
+}
+
+export function gsiToChoices(results) {
+  return (results || []).slice(0, 5).map(x => ({
+    name: x.properties.title,
+    lat: x.geometry.coordinates[1],
+    lng: x.geometry.coordinates[0],
+    address: x.properties.title,
+    kind: 'address',
+  }));
+}

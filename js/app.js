@@ -112,7 +112,7 @@ function openForm(spot) {
   $('sheet-title').textContent = spot ? '編輯景點' : '新增景點';
   const day = spot ? spot.day : state.activeDay;
   fillDayOptions(day);
-  let after = 'first';
+  let after = null; // 新增預設放在當天最後
   if (spot) {
     const list = spotsForDay(state.spots, day);
     const idx = list.findIndex(s => s.id === spot.id);
